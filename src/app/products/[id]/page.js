@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import PurchaseButton from '@/components/PurchaseButton';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -250,17 +251,27 @@ export default function ProductDetailPage() {
             <div className="mt-8 flex flex-col space-y-4">
               <button
                 onClick={handleAddToCart}
-                className="w-full bg-indigo-600 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full bg-indigo-50 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-indigo-700 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 장바구니에 추가
               </button>
               
-              <Link
-                href="/products"
-                className="w-full text-center bg-gray-100 border border-transparent rounded-md py-3 px-8 flex items-center justify-center text-base font-medium text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                상품 목록으로 돌아가기
-              </Link>
+              <PurchaseButton 
+                product={product} 
+                quantity={quantity} 
+                user={user} 
+              />
+            </div>
+
+            <div className="mt-8">
+              <div className="flex items-center">
+                <h3 className="text-sm font-medium text-gray-900 w-20">카테고리</h3>
+                <div className="text-sm text-gray-700">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                    {product.category}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
