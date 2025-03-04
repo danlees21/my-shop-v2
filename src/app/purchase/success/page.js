@@ -8,13 +8,14 @@ import { supabase } from '@/lib/supabase';
 export default function PurchaseSuccessPage() {
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
+  const paymentId = searchParams.get('paymentId');
   const [purchaseInfo, setPurchaseInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchPurchaseInfo = async () => {
-      if (!orderId) {
+      if (!orderId && !paymentId) {
         setError('주문 정보를 찾을 수 없습니다.');
         setLoading(false);
         return;
@@ -30,12 +31,18 @@ export default function PurchaseSuccessPage() {
         }
 
         // 구매 정보 조회
-        const { data, error } = await supabase
+        let query = supabase
           .from('purchases')
           .select('*')
-          .eq('order_id', orderId)
-          .eq('user_id', session.user.id)
-          .single();
+          .eq('user_id', session.user.id);
+        
+        if (orderId) {
+          query = query.eq('order_id', orderId);
+        } else if (paymentId) {
+          query = query.eq('order_id', paymentId);
+        }
+        
+        const { data, error } = await query.single();
 
         if (error) {
           throw error;
@@ -55,7 +62,7 @@ export default function PurchaseSuccessPage() {
     };
 
     fetchPurchaseInfo();
-  }, [orderId]);
+  }, [orderId, paymentId]);
 
   if (loading) {
     return (
@@ -88,6 +95,39 @@ export default function PurchaseSuccessPage() {
     );
   }
 
+  // 주문 상태에 따른 배지 색상 및 텍스트
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'completed':
+        return {
+          text: '결제 완료',
+          className: 'bg-green-100 text-green-800'
+        };
+      case 'pending':
+        return {
+          text: '처리 중',
+          className: 'bg-yellow-100 text-yellow-800'
+        };
+      case 'failed':
+        return {
+          text: '결제 실패',
+          className: 'bg-red-100 text-red-800'
+        };
+      case 'virtual_account_issued':
+        return {
+          text: '가상계좌 발급',
+          className: 'bg-blue-100 text-blue-800'
+        };
+      default:
+        return {
+          text: status,
+          className: 'bg-gray-100 text-gray-800'
+        };
+    }
+  };
+
+  const statusBadge = getStatusBadge(purchaseInfo?.status);
+
   return (
     <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -118,15 +158,21 @@ export default function PurchaseSuccessPage() {
               <dt className="text-sm font-medium text-gray-500">결제 방법</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{purchaseInfo?.payment_method}</dd>
             </div>
-            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            {purchaseInfo?.payment_key && (
+              <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                <dt className="text-sm font-medium text-gray-500">결제 키</dt>
+                <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{purchaseInfo.payment_key}</dd>
+              </div>
+            )}
+            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">주문 상태</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  {purchaseInfo?.status === 'completed' ? '결제 완료' : purchaseInfo?.status}
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge.className}`}>
+                  {statusBadge.text}
                 </span>
               </dd>
             </div>
-            <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+            <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
               <dt className="text-sm font-medium text-gray-500">주문 일시</dt>
               <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                 {new Date(purchaseInfo?.created_at).toLocaleString('ko-KR')}

@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS purchases (
   amount INTEGER NOT NULL,
   status TEXT NOT NULL,
   payment_method TEXT NOT NULL,
+  payment_key TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES auth.users (id) ON DELETE CASCADE
